@@ -18,6 +18,9 @@ app = FastAPI()
 # Setup templates
 templates = Jinja2Templates(directory=".")
 
+# Mount static directory for dataset image serving
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Dataset directory setup
 DATASET_DIR = "static/dataset"
 IMAGES_DIR = os.path.join(DATASET_DIR, "images")
@@ -290,9 +293,11 @@ async def save_to_dataset(request: Request):
         if not image_b64 or not metadata:
             return JSONResponse({"error": "Missing image or metadata"}, status_code=400)
         
+        status = metadata.get("summary", {}).get("status", "UNKNOWN")
+        file_id = f"{status}_{uuid.uuid4()}"
+        
         # Decode and save image
         image_data = base64.b64decode(image_b64)
-        file_id = str(uuid.uuid4())
         image_filename = f"{file_id}.jpg"
         image_path = os.path.join(IMAGES_DIR, image_filename)
         
@@ -307,6 +312,16 @@ async def save_to_dataset(request: Request):
             json.dump(metadata, f, indent=4)
             
         return JSONResponse({"status": "success", "id": file_id})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.get("/get_dataset_images")
+async def get_dataset_images():
+    try:
+        files = [f for f in os.listdir(IMAGES_DIR) if f.endswith('.jpg')]
+        # Sort by creation time (newest first)
+        files.sort(key=lambda x: os.path.getmtime(os.path.join(IMAGES_DIR, x)), reverse=True)
+        return JSONResponse({"images": files})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 

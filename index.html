@@ -153,6 +153,16 @@
                     </svg>
                     Upload Scan
                 </button>
+                <button id="viewDatasetBtn"
+                    class="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-slate-100 font-black py-4 px-4 rounded shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95 text-xs uppercase tracking-tight">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 7v10c0 1.1.9 2 2 2h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 11h16" />
+                    </svg>
+                    View Dataset
+                </button>
             </div>
 
             <div class="px-6 space-y-4">
@@ -470,6 +480,40 @@
         </div>
     </div>
 
+    <!-- Dataset Gallery Modal -->
+    <div id="galleryModal"
+        class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[150] hidden flex items-center justify-center p-10">
+        <div
+            class="bg-card w-full max-w-6xl h-full rounded-lg border border-white/10 shadow-3xl overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 7v10c0 1.1.9 2 2 2h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
+                    </svg>
+                    <h3 class="text-sm font-black uppercase tracking-[0.2em] text-slate-300">Dataset Gallery</h3>
+                </div>
+                <button id="closeGalleryBtn" class="text-slate-500 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[#0a0f1d]">
+                <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Images will be injected here -->
+                </div>
+            </div>
+            <div
+                class="p-4 bg-slate-900 border-t border-white/5 text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">
+                Total Samples: <span id="galleryCount" class="text-white">0</span>
+            </div>
+        </div>
+    </div>
+
     <script>
         let varianceChart;
         const history = [];
@@ -483,6 +527,11 @@
         const video = document.getElementById('videoStream');
         const captureBtn = document.getElementById('captureBtn');
         const saveDatasetBtn = document.getElementById('saveDatasetBtn');
+        const viewDatasetBtn = document.getElementById('viewDatasetBtn');
+        const galleryModal = document.getElementById('galleryModal');
+        const closeGalleryBtn = document.getElementById('closeGalleryBtn');
+        const galleryGrid = document.getElementById('galleryGrid');
+        const galleryCount = document.getElementById('galleryCount');
 
         saveDatasetBtn.addEventListener('click', async () => {
             if (!lastInspectionData) return;
@@ -542,6 +591,49 @@
             if (stream) stream.getTracks().forEach(track => track.stop());
             cameraModal.classList.add('hidden');
         });
+
+        // Gallery Control
+        viewDatasetBtn.addEventListener('click', openGallery);
+        closeGalleryBtn.addEventListener('click', () => galleryModal.classList.add('hidden'));
+
+        async function openGallery() {
+            galleryModal.classList.remove('hidden');
+            galleryGrid.innerHTML = '<div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-500 font-bold uppercase tracking-widest gap-4"><div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>Loading Dataset...</div>';
+
+            try {
+                const response = await fetch('/get_dataset_images');
+                const data = await response.json();
+                renderGallery(data.images);
+            } catch (err) {
+                galleryGrid.innerHTML = `<div class="col-span-full text-rose-500 font-bold uppercase tracking-widest text-center py-20">Error loading images: ${err.message}</div>`;
+            }
+        }
+
+        function renderGallery(images) {
+            galleryCount.innerText = images.length;
+            if (images.length === 0) {
+                galleryGrid.innerHTML = '<div class="col-span-full text-slate-600 font-bold uppercase tracking-widest text-center py-20">No data collected yet</div>';
+                return;
+            }
+
+            galleryGrid.innerHTML = images.map(filename => {
+                const isPass = filename.startsWith('PASS_');
+                const status = isPass ? 'PASS' : 'FAIL';
+                const color = isPass ? 'bg-emerald-500' : 'bg-rose-500';
+
+                return `
+                    <div class="group relative bg-[#1e293b] rounded-lg overflow-hidden border border-white/5 transition-all hover:border-white/20 hover:shadow-2xl hover:-translate-y-1">
+                        <div class="aspect-square bg-slate-900 overflow-hidden">
+                            <img src="/static/dataset/images/${filename}" alt="${filename}" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500">
+                        </div>
+                        <div class="p-3 flex items-center justify-between border-t border-white/5 bg-black/20">
+                            <span class="text-[9px] font-mono text-slate-500 truncate w-32" title="${filename}">${filename}</span>
+                            <span class="text-[8px] font-black px-1.5 py-0.5 rounded text-white ${color}">${status}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         function getValidatedTargets() {
             return {

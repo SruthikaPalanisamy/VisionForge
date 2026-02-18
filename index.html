@@ -124,7 +124,7 @@
         <aside class="w-72 bg-sidebar border-r border-white/5 flex flex-col shrink-0">
             <div class="p-6">
                 <button id="generateBtn"
-                    class="w-full bg-white hover:bg-slate-100 text-slate-900 font-black py-4 px-4 rounded shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95 text-xs uppercase tracking-tight">
+                    class="w-full bg-white hover:bg-slate-100 text-slate-900 font-black py-4 px-4 rounded shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95 text-xs uppercase tracking-tight mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -132,11 +132,35 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    Generate New Plate
+                    Generate Plate
+                </button>
+                <button id="liveScanBtn"
+                    class="w-full bg-slate-800 hover:bg-slate-700 text-slate-100 font-black py-4 px-4 rounded shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95 text-xs uppercase tracking-tight">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 00-2 2z" />
+                    </svg>
+                    Live Scan
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <div class="px-6 space-y-4">
+                <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Target Specs (mm)</h3>
+                <div class="grid grid-cols-1 gap-2">
+                    <input type="number" id="targetW" placeholder="Target Width"
+                        class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                        value="100">
+                    <input type="number" id="targetH" placeholder="Target Height"
+                        class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                        value="100">
+                    <input type="number" id="targetHD" placeholder="Hole Diameter"
+                        class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                        value="10">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar mt-6">
                 <div id="historyList" class="space-y-0.5">
                     <!-- History Items -->
                 </div>
@@ -360,18 +384,113 @@
         </main>
     </div>
 
+    <!-- Live Camera Modal -->
+    <div id="cameraModal"
+        class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[100] hidden flex items-center justify-center p-10">
+        <div
+            class="bg-card w-full max-w-4xl rounded-lg border border-white/10 shadow-3xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-300">Live Calibration Stream</h3>
+                </div>
+                <button id="closeCameraBtn" class="text-slate-500 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+                <video id="videoStream" autoplay playsinline class="max-h-full max-w-full"></video>
+                <div
+                    class="absolute inset-0 pointer-events-none border-[40px] border-black/20 flex items-center justify-center">
+                    <div class="w-full h-full border border-white/10 relative">
+                        <div
+                            class="absolute inset-0 border-[1px] border-blue-500/20 shadow-[inset_0_0_100px_rgba(59,130,246,0.1)]">
+                        </div>
+                    </div>
+                </div>
+                <canvas id="captureCanvas" class="hidden"></canvas>
+            </div>
+            <div class="p-6 bg-slate-900 flex justify-between items-center">
+                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                    Status: <span id="cameraStatus" class="text-emerald-500 font-black">Ready</span>
+                </div>
+                <div class="flex gap-4">
+                    <button id="captureBtn"
+                        class="bg-rose-500 hover:bg-rose-600 text-white font-black px-8 py-3 rounded text-xs uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Capture & Inspect
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let varianceChart;
         const history = [];
+        let stream = null;
+
+        // Camera Toggle
+        const liveScanBtn = document.getElementById('liveScanBtn');
+        const cameraModal = document.getElementById('cameraModal');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        const video = document.getElementById('videoStream');
+        const captureBtn = document.getElementById('captureBtn');
+
+        liveScanBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 1280, height: 720 } });
+                video.srcObject = stream;
+                cameraModal.classList.remove('hidden');
+            } catch (err) {
+                alert('Camera Access Denied: ' + err.message);
+            }
+        });
+
+        closeCameraBtn.addEventListener('click', () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            cameraModal.classList.add('hidden');
+        });
+
+        captureBtn.addEventListener('click', async () => {
+            const canvas = document.getElementById('captureCanvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+            const formData = new FormData();
+            formData.append('file', blob, 'snapshot.jpg');
+            formData.append('target_w', document.getElementById('targetW').value);
+            formData.append('target_h', document.getElementById('targetH').value);
+            formData.append('target_hole_d', document.getElementById('targetHD').value);
+
+            captureBtn.disabled = true;
+            captureBtn.innerText = 'PROCESSING...';
+
+            await runInspection('/inspect_live', 'POST', formData);
+
+            captureBtn.disabled = false;
+            captureBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg> Capture & Inspect`;
+
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            cameraModal.classList.add('hidden');
+        });
 
         document.getElementById('generateBtn').addEventListener('click', () => runInspection('/generate'));
 
         async function runInspection(url, method = 'POST', body = null) {
-            const genBtn = document.getElementById('generateBtn');
-            const originalHTML = genBtn.innerHTML;
-            genBtn.disabled = true;
-            genBtn.innerText = 'PROCESSING...';
-
             try {
                 const response = await fetch(url, { method, body });
                 const data = await response.json();
@@ -382,33 +501,25 @@
             } catch (err) {
                 console.error(err);
                 alert('Connection Error');
-            } finally {
-                genBtn.disabled = false;
-                genBtn.innerHTML = originalHTML;
             }
         }
 
         function updateDashboard(data) {
-            // Textual updates
-            document.getElementById('inspectionTitle').innerText = data.id.replace('INS-', 'Inspection Report #');
-            document.getElementById('reportId').innerText = `ID: ${data.id.replace('INS-', '0000000')}`;
+            document.getElementById('inspectionTitle').innerText = data.id.startsWith('LVE-') ? `Live Report ${data.id}` : data.id.replace('INS-', 'Inspection Report #');
+            document.getElementById('reportId').innerText = `ID: ${data.id}`;
             document.getElementById('timestamp').innerText = data.timestamp;
 
-            // Status Box
             const stBox = document.getElementById('statusBox');
             const isPass = data.summary.status === 'PASS';
             stBox.innerText = data.summary.status;
             stBox.className = `px-8 py-2 border-2 rounded font-black text-xl tracking-tighter shadow-2xl ${isPass ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10 shadow-emerald-500/20' : 'border-rose-500 text-rose-500 bg-rose-500/10 shadow-rose-500/20'}`;
 
-            // Image viewports
             document.getElementById('rawContainer').innerHTML = `<img src="data:image/png;base64,${data.original}" class="w-full h-full object-cover">`;
             document.getElementById('cvContainer').innerHTML = `<img src="data:image/png;base64,${data.processed}" class="w-full h-full object-cover">`;
 
-            // Metric cards
             updateMetricBox('Width', data.summary.plate_w);
             updateMetricBox('Height', data.summary.plate_h);
 
-            // Holes
             const vHoles = document.getElementById('valHoles');
             vHoles.innerText = data.summary.hole_count.measured;
             const hFail = data.summary.hole_count.measured !== 4;
@@ -416,10 +527,7 @@
             document.getElementById('cardHoles').className = `bg-card p-6 rounded border border-white/5 shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden ${hFail ? 'metric-indicator-fail' : 'metric-indicator-pass'}`;
             document.getElementById('warnHoles').classList.toggle('hidden', !hFail);
 
-            // Latency
             document.getElementById('valLatency').innerText = data.summary.latency;
-
-            // Chart
             renderChart(data.results.map(r => r.feature.replace('Plate ', '')), data.results.map(r => parseFloat(r.error)));
         }
 
@@ -430,9 +538,9 @@
             const warn = document.getElementById(`warn${key}`);
 
             val.innerText = detail.measured;
-            tgt.innerText = detail.expected + 'px';
+            tgt.innerText = detail.expected + 'mm';
 
-            const isFail = detail.error > 5;
+            const isFail = detail.error > 2;
             card.className = `bg-card p-6 rounded border border-white/5 shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden ${isFail ? 'metric-indicator-fail' : 'metric-indicator-pass'}`;
             val.className = `text-4xl font-black mono ${isFail ? 'text-rose-500' : 'text-white'}`;
             warn.classList.toggle('hidden', !isFail);
@@ -444,11 +552,12 @@
             const itemHTML = `
                 <div class="px-6 py-5 bg-white/[0.02] border-b border-white/5 hover:bg-white/[0.04] transition-colors cursor-pointer group flex justify-between items-start">
                     <div class="space-y-1">
-                        <span class="block text-[9px] font-bold text-slate-500 mono leading-none uppercase">${data.id.replace('INS-', '#00')}</span>
-                        <span class="block text-xs font-bold text-slate-200 leading-none">Plate Inspection</span>
+                        <span class="block text-[9px] font-bold text-slate-500 mono leading-none uppercase">${data.id}</span>
+                        <span class="block text-xs font-bold text-slate-200 leading-none">${data.id.startsWith('LVE-') ? 'Live Scan' : 'Plate Inspection'}</span>
+                        ${data.summary.errors.length > 0 ? `<span class="block text-[8px] text-rose-500 font-bold">${data.summary.errors[0]}</span>` : ''}
                     </div>
                     <div class="flex flex-col items-end gap-2">
-                        <span class="text-[9px] font-bold text-slate-600 leading-none">${data.timestamp.split(' ')[1]}</span>
+                        <span class="text-[9px] font-bold text-slate-600 leading-none">${data.timestamp}</span>
                         <span class="text-[8px] font-black px-1.5 py-0.5 rounded border border-current ${isPass ? 'text-emerald-500' : 'text-rose-500'} scale-90 origin-right transition-transform group-hover:scale-100">${data.summary.status}</span>
                     </div>
                 </div>
@@ -466,7 +575,7 @@
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: values.map(v => v > 5 ? '#ef4444' : '#64748b'),
+                        backgroundColor: values.map(v => v > 2 ? '#ef4444' : '#64748b'),
                         borderRadius: 2,
                         barThickness: 16
                     }]

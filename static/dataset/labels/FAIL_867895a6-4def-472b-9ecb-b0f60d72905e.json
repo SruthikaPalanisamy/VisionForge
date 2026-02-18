@@ -1,0 +1,41 @@
+{
+    "id": "INS-5279",
+    "timestamp": "09:03:23 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 22.5,
+            "expected": 20,
+            "error": 12.5
+        },
+        "plate_h": {
+            "measured": 21.5,
+            "expected": 20,
+            "error": 7.5
+        },
+        "hole_count": {
+            "measured": 0,
+            "expected": 6
+        },
+        "status": "FAIL",
+        "latency": 2.59,
+        "errors": [
+            "Width error: +2.5mm",
+            "Height error: +1.5mm",
+            "Hole Count error: 0 / 6"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "22.5mm",
+            "expected": "20.0mm",
+            "error": "12.5%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "21.5mm",
+            "expected": "20.0mm",
+            "error": "7.5%"
+        }
+    ]
+}

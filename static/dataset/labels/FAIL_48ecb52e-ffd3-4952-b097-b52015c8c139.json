@@ -1,0 +1,40 @@
+{
+    "id": "LVE-5665",
+    "timestamp": "09:09:20 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 37.5,
+            "expected": 0,
+            "error": 3750
+        },
+        "plate_h": {
+            "measured": 39,
+            "expected": 0,
+            "error": 3900
+        },
+        "hole_count": {
+            "measured": 4,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 42.69,
+        "errors": [
+            "Width error: +37.5mm",
+            "Height error: +39.0mm"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "37.5mm",
+            "expected": "0.0mm",
+            "error": "3750.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "39.0mm",
+            "expected": "0.0mm",
+            "error": "3900.0%"
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "id": "LVE-3986",
+    "timestamp": "09:03:45 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 13,
+            "expected": 0,
+            "error": 1300
+        },
+        "plate_h": {
+            "measured": 16,
+            "expected": 0,
+            "error": 1600
+        },
+        "hole_count": {
+            "measured": 8,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 46.89,
+        "errors": [
+            "Width error: +13.0mm",
+            "Height error: +16.0mm",
+            "Hole Count error: 8 / 4"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "13.0mm",
+            "expected": "0.0mm",
+            "error": "1300.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "16.0mm",
+            "expected": "0.0mm",
+            "error": "1600.0%"
+        }
+    ]
+}

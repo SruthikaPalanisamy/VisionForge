@@ -1,0 +1,40 @@
+{
+    "id": "LVE-8264",
+    "timestamp": "09:04:24 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 14.5,
+            "expected": 0,
+            "error": 1450
+        },
+        "plate_h": {
+            "measured": 17,
+            "expected": 0,
+            "error": 1700
+        },
+        "hole_count": {
+            "measured": 4,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 24.57,
+        "errors": [
+            "Width error: +14.5mm",
+            "Height error: +17.0mm"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "14.5mm",
+            "expected": "0.0mm",
+            "error": "1450.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "17.0mm",
+            "expected": "0.0mm",
+            "error": "1700.0%"
+        }
+    ]
+}

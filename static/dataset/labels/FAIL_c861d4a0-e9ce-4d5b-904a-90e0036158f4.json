@@ -1,0 +1,41 @@
+{
+    "id": "LVE-2276",
+    "timestamp": "09:02:24 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 19,
+            "expected": 0,
+            "error": 1900
+        },
+        "plate_h": {
+            "measured": 19,
+            "expected": 0,
+            "error": 1900
+        },
+        "hole_count": {
+            "measured": 6,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 30.36,
+        "errors": [
+            "Width error: +19.0mm",
+            "Height error: +19.0mm",
+            "Hole Count error: 6 / 4"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "19.0mm",
+            "expected": "0.0mm",
+            "error": "1900.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "19.0mm",
+            "expected": "0.0mm",
+            "error": "1900.0%"
+        }
+    ]
+}

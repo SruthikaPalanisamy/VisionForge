@@ -101,31 +101,36 @@ def process_image(img, targets=None):
     pixel_to_mm = 1.0 / PPM 
     tolerance = 0.02 # 2%
     
-    # CV Preprocessing
+    # Immediate Conversion & Channel Count Verification
     if len(img.shape) == 3:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        processed_img = img.copy()
     else:
-        gray = img
-        processed_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        gray = img.copy()
+    
+    if len(gray.shape) != 2:
+        return None, [], {"error": "Image must be single channel grayscale"}
 
-    # 1. Preprocessing: Strong blur to smooth surface scratches/grain
-    blurred = cv2.GaussianBlur(gray, (9, 9), 0)
+    # 1. Preprocessing: Bilateral filter (receives gray)
+    blurred = cv2.bilateralFilter(gray, 9, 75, 75)
     
-    # 2. Binary Thresholding: Inverse + Otsu to isolate features
-    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # 2. Adaptive Thresholding: Create a clean binary mask (receives blurred gray)
+    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                   cv2.THRESH_BINARY_INV, 11, 2)
     
-    # 3. Clean Up: Morphological opening for small noise
+    # 3. Clean Up: Morphological opening (receives thresh)
     kernel = np.ones((3,3), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     
-    # Find potential features
+    # UI Feedback: Set processed_img to the binary mask so user sees what AI sees
+    processed_img = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+    
+    # Find potential features (on thresh mask)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     results = []
     summary = {"plate_w": 0, "plate_h": 0, "hole_count": 0, "status": "PASS", "latency": 0, "errors": []}
     
-    # Plate Detection (Canny boundary)
+    # Plate Detection (Canny on blurred gray map)
     edges = cv2.Canny(blurred, 30, 100)
     plate_contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
@@ -137,7 +142,7 @@ def process_image(img, targets=None):
         m_w = px_w * pixel_to_mm
         m_h = px_h * pixel_to_mm
         
-        # Overlay
+        # Overlay on BGR-converted mask
         cv2.rectangle(processed_img, (px_x, px_y), (px_x + px_w, px_y + px_h), (0, 255, 0), 2)
         cv2.putText(processed_img, f"W: {round(m_w,1)}mm", (px_x, px_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         cv2.putText(processed_img, f"H: {round(m_h,1)}mm", (px_x - 70, px_y + px_h // 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
@@ -158,28 +163,33 @@ def process_image(img, targets=None):
             results.append({"feature": "Plate Width", "measured": f"{round(m_w,2)}mm", "expected": f"{round(t_w,2)}mm", "error": f"{round(err_w*100,2)}%"})
             results.append({"feature": "Plate Height", "measured": f"{round(m_h,2)}mm", "expected": f"{round(t_h,2)}mm", "error": f"{round(err_h*100,2)}%"})
 
-    # 4. Areal Filtering (100 - 2000 pixels)
+    # 4. Circularity & Areal Filtering for Holes
     detected_holes = []
+    import math
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if 100 < area < 2000:
-            bx, by, bw, bh = cv2.boundingRect(cnt)
-            aspect_ratio = float(bw)/bh
-            
-            if 0.7 < aspect_ratio < 1.3:
-                (x, y), radius = cv2.minEnclosingCircle(cnt)
-                detected_holes.append({"x": int(x), "y": int(y), "r": int(radius)})
-                m_rd = radius * 2 * pixel_to_mm
+        perimeter = cv2.arcLength(cnt, True)
+        
+        if area > 100:
+            if perimeter > 0:
+                circularity = (4 * math.pi * area) / (perimeter * perimeter)
                 
-                color = (255, 0, 0)
-                if targets:
-                    t_rd = float(targets.get("hole_d", m_rd))
-                    if abs(m_rd - t_rd) / max(t_rd, 1) > tolerance:
-                        color = (0, 0, 255)
-                        summary["status"] = "FAIL"
-                
-                cv2.circle(processed_img, (int(x), int(y)), int(radius), color, 2)
-                cv2.putText(processed_img, f"D:{round(m_rd,1)}mm", (int(x)-15, int(y)-int(radius+5)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+                # Filter: Circularity 0.7 - 1.2
+                if 0.7 < circularity < 1.2:
+                    (x, y), radius = cv2.minEnclosingCircle(cnt)
+                    detected_holes.append({"x": int(x), "y": int(y), "r": int(radius)})
+                    m_rd = radius * 2 * pixel_to_mm
+                    
+                    # Draw Green circle for verified holes
+                    color = (0, 255, 0)
+                    if targets:
+                        t_rd = float(targets.get("hole_d", m_rd))
+                        if abs(m_rd - t_rd) / max(t_rd, 1) > tolerance:
+                            color = (0, 0, 255) # Red if diameter error
+                            summary["status"] = "FAIL"
+                    
+                    cv2.circle(processed_img, (int(x), int(y)), int(radius), color, 2)
+                    cv2.putText(processed_img, f"D:{round(m_rd,1)}mm", (int(x)-15, int(y)-int(radius+5)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
     t_hc = int(targets.get("hole_count", 4)) if targets else 4
     summary["hole_count"] = {"measured": len(detected_holes), "expected": t_hc}

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionForge | CNC Inspection Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .bg-topbar {
+            background-color: #111827;
+        }
+
+        .bg-sidebar {
+            background-color: #0f172a;
+        }
+
+        .bg-card {
+            background-color: #1e293b;
+        }
+
+        .border-subtle {
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-indicator-fail {
+            position: relative;
+        }
+
+        .metric-indicator-fail::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #ef4444;
+        }
+
+        .metric-indicator-pass {
+            position: relative;
+        }
+
+        .metric-indicator-pass::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #10b981;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        .pulse-green {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-slate-100 flex flex-col h-screen overflow-hidden">
+
+    <!-- Global Top Bar -->
+    <nav class="bg-topbar h-16 px-6 flex items-center justify-between border-b border-white/5 shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-white rounded flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-slate-900" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-sm font-black uppercase tracking-tighter leading-none">VisionForge</h1>
+                <span class="text-[10px] text-slate-500 font-medium uppercase tracking-widest">CNC Inspection System
+                    V1.0</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-emerald-500 rounded-full pulse-green"></div>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Online</span>
+        </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-72 bg-sidebar border-r border-white/5 flex flex-col shrink-0">
+            <div class="p-6">
+                <button id="generateBtn"
+                    class="w-full bg-white hover:bg-slate-100 text-slate-900 font-black py-4 px-4 rounded shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95 text-xs uppercase tracking-tight">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Generate New Plate
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <div id="historyList" class="space-y-0.5">
+                    <!-- History Items -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard -->
+        <main class="flex-1 overflow-y-auto bg-[#0a0f1d]">
+            <div class="p-10 space-y-10">
+                <!-- Header -->
+                <div class="flex justify-between items-start">
+                    <div class="space-y-2">
+                        <h2 id="inspectionTitle" class="text-4xl font-black text-white">Inspection Report #X</h2>
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-2">
+                                <div class="w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
+                                <span id="reportId"
+                                    class="text-slate-500 font-mono text-xs uppercase tracking-widest">ID:
+                                    00000000</span>
+                            </div>
+                            <span id="timestamp" class="text-slate-500 text-xs font-semibold">Waiting for
+                                inspection...</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Overall
+                            Status</span>
+                        <div id="statusBox"
+                            class="border-2 border-slate-700 text-slate-600 px-6 py-1 rounded font-black text-xl tracking-tighter transition-all">
+                            IDLE
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-white/5">
+
+                <!-- Primary Metrics Row -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Plate Width -->
+                    <div id="cardWidth"
+                        class="bg-card p-6 rounded border border-white/5 metric-indicator-pass shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden">
+                        <div
+                            class="flex justify-between items-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Plate Width
+                            <div id="warnWidth" class="hidden text-rose-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-1 mt-auto">
+                            <span id="valWidth" class="text-4xl font-black mono text-white">0.00</span>
+                            <span class="text-xs font-bold text-slate-400">px</span>
+                        </div>
+                        <div class="absolute bottom-4 right-6 flex items-baseline gap-2">
+                            <span class="text-[8px] font-bold text-slate-600 uppercase">Target:</span>
+                            <span id="tgtWidth" class="text-[10px] font-bold text-slate-300">000px</span>
+                        </div>
+                    </div>
+
+                    <!-- Plate Height -->
+                    <div id="cardHeight"
+                        class="bg-card p-6 rounded border border-white/5 metric-indicator-pass shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden">
+                        <div
+                            class="flex justify-between items-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Plate Height
+                            <div id="warnHeight" class="hidden text-rose-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-1 mt-auto">
+                            <span id="valHeight" class="text-4xl font-black mono text-white">0.00</span>
+                            <span class="text-xs font-bold text-slate-400">px</span>
+                        </div>
+                        <div class="absolute bottom-4 right-6 flex items-baseline gap-2">
+                            <span class="text-[8px] font-bold text-slate-600 uppercase">Target:</span>
+                            <span id="tgtHeight" class="text-[10px] font-bold text-slate-300">000px</span>
+                        </div>
+                    </div>
+
+                    <!-- Hole Count -->
+                    <div id="cardHoles"
+                        class="bg-card p-6 rounded border border-white/5 metric-indicator-pass shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden">
+                        <div
+                            class="flex justify-between items-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Hole Count
+                            <div id="warnHoles" class="hidden text-rose-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-1 mt-auto">
+                            <span id="valHoles" class="text-4xl font-black mono text-rose-500">0</span>
+                            <span class="text-xs font-bold text-slate-400">qty</span>
+                        </div>
+                        <div class="absolute bottom-4 right-6 flex items-baseline gap-2">
+                            <span class="text-[8px] font-bold text-slate-600 uppercase">Target:</span>
+                            <span class="text-[10px] font-bold text-slate-300">4qty</span>
+                        </div>
+                    </div>
+
+                    <!-- Processing Time -->
+                    <div
+                        class="bg-card p-6 rounded border border-white/5 shadow-2xl flex flex-col justify-between h-32 relative overflow-hidden">
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Processing Time
+                        </div>
+                        <div class="flex items-baseline gap-1 mt-auto">
+                            <span id="valLatency" class="text-4xl font-black mono text-white">0</span>
+                            <span class="text-xs font-bold text-slate-400">ms</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
+                    <!-- Visual Inspection -->
+                    <div class="space-y-4 flex flex-col">
+                        <h3
+                            class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                    d="M12 21V3m9 9H3" />
+                            </svg>
+                            Visual Inspection
+                        </h3>
+                        <div class="flex gap-4">
+                            <div class="flex-1 bg-card rounded p-1 border border-white/5 relative group">
+                                <span
+                                    class="absolute top-4 left-4 z-10 bg-slate-800/80 px-2 py-1 text-[9px] font-black uppercase tracking-widest border border-white/5 backdrop-blur">Raw
+                                    Input</span>
+                                <div id="rawContainer"
+                                    class="aspect-square bg-slate-900 overflow-hidden flex items-center justify-center">
+                                    <span class="text-[10px] text-slate-700 font-bold">AWAITING INPUT</span>
+                                </div>
+                                <div
+                                    class="absolute bottom-3 right-3 flex gap-1 transform translate-y-8 group-hover:translate-y-0 transition-transform bg-slate-800/80 p-1.5 rounded-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-slate-300" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1 bg-card rounded p-1 border border-white/5 relative group">
+                                <span
+                                    class="absolute top-4 left-4 z-10 bg-slate-800/80 px-2 py-1 text-[9px] font-black uppercase tracking-widest border border-white/5 backdrop-blur">Computer
+                                    Vision</span>
+                                <div id="cvContainer"
+                                    class="aspect-square bg-slate-900 overflow-hidden flex items-center justify-center">
+                                    <span class="text-[10px] text-slate-700 font-bold">AWAITING INPUT</span>
+                                </div>
+                                <div
+                                    class="absolute bottom-3 right-3 flex gap-1 transform translate-y-8 group-hover:translate-y-0 transition-transform bg-slate-800/80 p-1.5 rounded-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-slate-300" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-slate-300" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dimensional Analysis -->
+                    <div class="space-y-4 flex flex-col">
+                        <h3
+                            class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            Dimensional Analysis
+                        </h3>
+                        <div class="flex-1 bg-card rounded border border-white/5 flex flex-col overflow-hidden">
+                            <div class="bg-white/5 flex p-2 gap-2">
+                                <button
+                                    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-900 rounded text-slate-100 border border-white/5">Dimensions</button>
+                                <button
+                                    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors">Hole
+                                    Positions</button>
+                            </div>
+                            <div class="flex-1 p-8 relative min-h-[300px] flex flex-col justify-end">
+                                <div id="chartContainer" class="flex-1 relative mb-6">
+                                    <canvas id="varianceChart"></canvas>
+                                </div>
+                                <div class="flex justify-between border-t border-white/5 pt-4">
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] font-bold text-slate-600 uppercase">Target Line</span>
+                                        <span class="text-[10px] font-black text-slate-400">100.00% SYNC</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[9px] font-bold text-slate-600 uppercase">Analysis
+                                            Engine</span>
+                                        <span class="text-[10px] font-black text-blue-500">OPTIMIZED</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let varianceChart;
+        const history = [];
+
+        document.getElementById('generateBtn').addEventListener('click', () => runInspection('/generate'));
+
+        async function runInspection(url, method = 'POST', body = null) {
+            const genBtn = document.getElementById('generateBtn');
+            const originalHTML = genBtn.innerHTML;
+            genBtn.disabled = true;
+            genBtn.innerText = 'PROCESSING...';
+
+            try {
+                const response = await fetch(url, { method, body });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                updateDashboard(data);
+                addToHistoryList(data);
+            } catch (err) {
+                console.error(err);
+                alert('Connection Error');
+            } finally {
+                genBtn.disabled = false;
+                genBtn.innerHTML = originalHTML;
+            }
+        }
+
+        function updateDashboard(data) {
+            // Textual updates
+            document.getElementById('inspectionTitle').innerText = data.id.replace('INS-', 'Inspection Report #');
+            document.getElementById('reportId').innerText = `ID: ${data.id.replace('INS-', '0000000')}`;
+            document.getElementById('timestamp').innerText = data.timestamp;
+
+            // Status Box
+            const stBox = document.getElementById('statusBox');
+            const isPass = data.summary.status === 'PASS';
+            stBox.innerText = data.summary.status;
+            stBox.className = `px-8 py-2 border-2 rounded font-black text-xl tracking-tighter shadow-2xl ${isPass ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10 shadow-emerald-500/20' : 'border-rose-500 text-rose-500 bg-rose-500/10 shadow-rose-500/20'}`;
+
+            // Image viewports
+            document.getElementById('rawContainer').innerHTML = `<img src="data:image/png;base64,${data.original}" class="w-full h-full object-cover">`;
+            document.getElementById('cvContainer').innerHTML = `<img src="data:image/png;base64,${data.processed}" class="w-full h-full object-cover">`;
+
+            // Metric cards
+            updateMetricBox('Width', data.summary.plate_w);
+            updateMetricBox('Height', data.summary.plate_h);
+
+            // Holes
+            const vHoles = document.getElementById('valHoles');
+            vHoles.innerText = data.summary.hole_count.measured;
+            const hFail = data.summary.hole_count.measured !== 4;
+            vHoles.className = `text-4xl font-black mono ${hFail ? 'text-rose-500' : 'text-white'}`;
+            document.getElementById('cardHoles').className = `bg-card p-6 rounded border border-white/5 shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden ${hFail ? 'metric-indicator-fail' : 'metric-indicator-pass'}`;
+            document.getElementById('warnHoles').classList.toggle('hidden', !hFail);
+
+            // Latency
+            document.getElementById('valLatency').innerText = data.summary.latency;
+
+            // Chart
+            renderChart(data.results.map(r => r.feature.replace('Plate ', '')), data.results.map(r => parseFloat(r.error)));
+        }
+
+        function updateMetricBox(key, detail) {
+            const card = document.getElementById(`card${key}`);
+            const val = document.getElementById(`val${key}`);
+            const tgt = document.getElementById(`tgt${key}`);
+            const warn = document.getElementById(`warn${key}`);
+
+            val.innerText = detail.measured;
+            tgt.innerText = detail.expected + 'px';
+
+            const isFail = detail.error > 5;
+            card.className = `bg-card p-6 rounded border border-white/5 shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden ${isFail ? 'metric-indicator-fail' : 'metric-indicator-pass'}`;
+            val.className = `text-4xl font-black mono ${isFail ? 'text-rose-500' : 'text-white'}`;
+            warn.classList.toggle('hidden', !isFail);
+        }
+
+        function addToHistoryList(data) {
+            const list = document.getElementById('historyList');
+            const isPass = data.summary.status === 'PASS';
+            const itemHTML = `
+                <div class="px-6 py-5 bg-white/[0.02] border-b border-white/5 hover:bg-white/[0.04] transition-colors cursor-pointer group flex justify-between items-start">
+                    <div class="space-y-1">
+                        <span class="block text-[9px] font-bold text-slate-500 mono leading-none uppercase">${data.id.replace('INS-', '#00')}</span>
+                        <span class="block text-xs font-bold text-slate-200 leading-none">Plate Inspection</span>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-[9px] font-bold text-slate-600 leading-none">${data.timestamp.split(' ')[1]}</span>
+                        <span class="text-[8px] font-black px-1.5 py-0.5 rounded border border-current ${isPass ? 'text-emerald-500' : 'text-rose-500'} scale-90 origin-right transition-transform group-hover:scale-100">${data.summary.status}</span>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('afterbegin', itemHTML);
+        }
+
+        function renderChart(labels, values) {
+            const ctx = document.getElementById('varianceChart').getContext('2d');
+            if (varianceChart) varianceChart.destroy();
+
+            varianceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: values.map(v => v > 5 ? '#ef4444' : '#64748b'),
+                        borderRadius: 2,
+                        barThickness: 16
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            display: false,
+                            grid: { display: false },
+                            max: Math.max(10, ...values) + 5
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#475569',
+                                font: { size: 9, weight: '700' },
+                                padding: 10
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

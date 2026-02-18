@@ -19,45 +19,66 @@ app = FastAPI()
 templates = Jinja2Templates(directory=".")
 
 # Dataset directory setup
-DATASET_DIR = "dataset"
+DATASET_DIR = "static/dataset"
 IMAGES_DIR = os.path.join(DATASET_DIR, "images")
 LABELS_DIR = os.path.join(DATASET_DIR, "labels")
 
 for d in [IMAGES_DIR, LABELS_DIR]:
     if not os.path.exists(d):
-        os.makedirs(d)
+        os.makedirs(d, exist_ok=True)
 
-def generate_synthetic_image():
-    # Create 500x500 grayscale image
-    img = np.ones((500, 500), dtype=np.uint8) * 50
+def generate_synthetic_image(t_w=200, t_h=200, t_hd=10, t_hc=4):
+    # 1mm = 2px calibration
+    # Target dimensions in pixels
+    p_w = int(t_w * 2) 
+    p_h = int(t_h * 2)
+    hr = int(t_hd) # 1mm = 2px, so radius in px = diameter in mm
     
-    # Metal plate (rectangle) coordinates
-    p_w = random.randint(350, 420)
-    p_h = random.randint(350, 420)
-    x1 = (500 - p_w) // 2
-    y1 = (500 - p_h) // 2
+    # Add slight random variation (+/- 2px) to simulated target
+    p_w += random.randint(-2, 2)
+    p_h += random.randint(-2, 2)
+    
+    # Create background based on plate size with margins
+    canvas_w = max(p_w + 100, 500)
+    canvas_h = max(p_h + 100, 500)
+    img = np.ones((canvas_h, canvas_w), dtype=np.uint8) * 50
+    
+    x1 = (canvas_w - p_w) // 2
+    y1 = (canvas_h - p_h) // 2
     x2 = x1 + p_w
     y2 = y1 + p_h
     
     # Draw metal plate
     cv2.rectangle(img, (x1, y1), (x2, y2), (200), -1)
     
-    # Generate 4 holes
+    # Generate holes
     holes = []
-    margin = 50
-    quads = [
-        (x1 + margin, y1 + margin, x1 + p_w//2 - margin, y1 + p_h//2 - margin),
-        (x1 + p_w//2 + margin, y1 + margin, x2 - margin, y1 + p_h//2 - margin),
-        (x1 + margin, y1 + p_h//2 + margin, x1 + p_w//2 - margin, y2 - margin),
-        (x1 + p_w//2 + margin, y1 + p_h//2 + margin, x2 - margin, y2 - margin)
-    ]
+    margin = 40
     
-    for q in quads:
-        hx = random.randint(q[0], q[2])
-        hy = random.randint(q[1], q[3])
-        hr = 20 # Target 20
-        holes.append({"x": hx, "y": hy, "r": hr})
-        cv2.circle(img, (hx, hy), hr, (50), -1)
+    # Distribute holes in a grid-like pattern based on target count
+    cols = int(np.ceil(np.sqrt(t_hc)))
+    rows = int(np.ceil(t_hc / cols))
+    
+    for i in range(t_hc):
+        row = i // cols
+        col = i % cols
+        
+        # Calculate cell coordinates
+        cell_w = (p_w - 2*margin) // cols
+        cell_h = (p_h - 2*margin) // rows
+        
+        cx_base = x1 + margin + col * cell_w + cell_w // 2
+        cy_base = y1 + margin + row * cell_h + cell_h // 2
+        
+        # Jitter hole position
+        hx = cx_base + random.randint(-margin//2, margin//2)
+        hy = cy_base + random.randint(-margin//2, margin//2)
+        
+        # Jitter hole radius slightly
+        h_hr = hr + random.choice([-1, 0, 1])
+        
+        holes.append({"x": hx, "y": hy, "r": h_hr})
+        cv2.circle(img, (hx, hy), h_hr, (50), -1)
         
     # Add Gaussian noise
     noise = np.random.normal(0, 8, img.shape).astype(np.int16)
@@ -73,8 +94,9 @@ def generate_synthetic_image():
 
 def process_image(img, targets=None):
     start_time = time.time()
-    pixel_to_mm = 0.5 # 1mm = 2px -> 0.5 mm/px
-    tolerance = 0.02 # 2% as requested
+    PPM = 2.0 # Pixels Per Millimeter
+    pixel_to_mm = 1.0 / PPM 
+    tolerance = 0.02 # 2%
     
     # CV Preprocessing
     if len(img.shape) == 3:
@@ -84,23 +106,23 @@ def process_image(img, targets=None):
         gray = img
         processed_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
-    # 1. Preprocessing: Strong blur to smooth surface scratches
+    # 1. Preprocessing: Strong blur to smooth surface scratches/grain
     blurred = cv2.GaussianBlur(gray, (9, 9), 0)
     
-    # 2. Binary Thresholding: Inverse + Otsu to make holes white islands
+    # 2. Binary Thresholding: Inverse + Otsu to isolate features
     _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     
-    # 3. Clean Up: Morphological opening to remove tiny white specks
+    # 3. Clean Up: Morphological opening for small noise
     kernel = np.ones((3,3), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     
-    # Find all potential features (islands)
+    # Find potential features
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     results = []
     summary = {"plate_w": 0, "plate_h": 0, "hole_count": 0, "status": "PASS", "latency": 0, "errors": []}
     
-    # Plate Detection (using Canny on the same blurred image for boundary)
+    # Plate Detection (Canny boundary)
     edges = cv2.Canny(blurred, 30, 100)
     plate_contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
@@ -112,50 +134,55 @@ def process_image(img, targets=None):
         m_w = px_w * pixel_to_mm
         m_h = px_h * pixel_to_mm
         
-        # Overlay Box & Dimensions
+        # Overlay
         cv2.rectangle(processed_img, (px_x, px_y), (px_x + px_w, px_y + px_h), (0, 255, 0), 2)
         cv2.putText(processed_img, f"W: {round(m_w,1)}mm", (px_x, px_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-        cv2.putText(processed_img, f"H: {round(m_h,1)}mm", (px_x - 70, px_y + px_h//2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        cv2.putText(processed_img, f"H: {round(m_h,1)}mm", (px_x - 70, px_y + px_h // 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
         if targets:
             t_w, t_h = float(targets.get("width", m_w)), float(targets.get("height", m_h))
             err_w, err_h = abs(m_w - t_w) / max(t_w, 1), abs(m_h - t_h) / max(t_h, 1)
-            summary["plate_w"], summary["plate_h"] = {"measured": round(m_w, 2), "expected": round(t_w, 2), "error": round(err_w*100, 2)}, {"measured": round(m_h, 2), "expected": round(t_h, 2), "error": round(err_h*100, 2)}
+            summary["plate_w"] = {"measured": round(m_w, 2), "expected": round(t_w, 2), "error": round(err_w*100, 2)}
+            summary["plate_h"] = {"measured": round(m_h, 2), "expected": round(t_h, 2), "error": round(err_h*100, 2)}
+            
             if err_w > tolerance:
                 summary["status"] = "FAIL"
                 summary["errors"].append(f"Width error: {'+' if m_w > t_w else ''}{round(m_w - t_w, 1)}mm")
             if err_h > tolerance:
                 summary["status"] = "FAIL"
                 summary["errors"].append(f"Height error: {'+' if m_h > t_h else ''}{round(m_h - t_h, 1)}mm")
+            
+            results.append({"feature": "Plate Width", "measured": f"{round(m_w,2)}mm", "expected": f"{round(t_w,2)}mm", "error": f"{round(err_w*100,2)}%"})
+            results.append({"feature": "Plate Height", "measured": f"{round(m_h,2)}mm", "expected": f"{round(t_h,2)}mm", "error": f"{round(err_h*100,2)}%"})
 
-    # 4. Areal & Circularity Filtering for Holes
+    # 4. Areal Filtering (100 - 2000 pixels)
     detected_holes = []
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        
-        # Areal Filtering (100 - 5000)
-        if 100 < area < 5000:
+        if 100 < area < 2000:
             bx, by, bw, bh = cv2.boundingRect(cnt)
             aspect_ratio = float(bw)/bh
             
-            # Circularity Check: Aspect ratio close to 1:1
-            if 0.8 < aspect_ratio < 1.2:
+            if 0.7 < aspect_ratio < 1.3:
                 (x, y), radius = cv2.minEnclosingCircle(cnt)
                 detected_holes.append({"x": int(x), "y": int(y), "r": int(radius)})
                 m_rd = radius * 2 * pixel_to_mm
                 
                 color = (255, 0, 0)
-                if targets and abs(m_rd - float(targets.get("hole_d", m_rd))) / max(float(targets.get("hole_d", m_rd)), 1) > tolerance:
-                    color = (0, 0, 255)
-                    summary["status"] = "FAIL"
+                if targets:
+                    t_rd = float(targets.get("hole_d", m_rd))
+                    if abs(m_rd - t_rd) / max(t_rd, 1) > tolerance:
+                        color = (0, 0, 255)
+                        summary["status"] = "FAIL"
                 
                 cv2.circle(processed_img, (int(x), int(y)), int(radius), color, 2)
                 cv2.putText(processed_img, f"D:{round(m_rd,1)}mm", (int(x)-15, int(y)-int(radius+5)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
-    summary["hole_count"] = {"measured": len(detected_holes), "expected": int(targets.get("hole_count", 4)) if targets else 4}
-    if len(detected_holes) != summary["hole_count"]["expected"]: 
+    t_hc = int(targets.get("hole_count", 4)) if targets else 4
+    summary["hole_count"] = {"measured": len(detected_holes), "expected": t_hc}
+    if len(detected_holes) != t_hc: 
         summary["status"] = "FAIL"
-        summary["errors"].append(f"Hole Count error: {len(detected_holes)} / {summary['hole_count']['expected']}")
+        summary["errors"].append(f"Hole Count error: {len(detected_holes)} / {t_hc}")
 
     summary["latency"] = round((time.time() - start_time) * 1000, 2)
     return processed_img, results, summary
@@ -170,14 +197,14 @@ async def index(request: Request):
 
 @app.post("/generate")
 async def generate(
-    target_w: float = 400,
-    target_h: float = 400,
-    target_hole_d: float = 20,
+    target_w: float = 200,
+    target_h: float = 200,
+    target_hole_d: float = 10,
     target_hole_count: int = 4
 ):
     id_str = f"INS-{random.randint(1000, 9999)}"
-    # For generation, we still use synthetic logic but we use the targets for truth
-    img, ground_truth = generate_synthetic_image() # generator currently hardcoded to 4
+    # Use user targets to guide the generation
+    img, ground_truth = generate_synthetic_image(target_w, target_h, target_hole_d, target_hole_count)
     orig_b64 = img_to_base64(img)
     
     targets = {"width": target_w, "height": target_h, "hole_d": target_hole_d, "hole_count": target_hole_count}
@@ -193,8 +220,8 @@ async def generate(
         "summary": summary
     })
 
-@app.post("/upload")
-async def upload_file(
+@app.post("/process_upload")
+async def process_upload(
     file: UploadFile = File(...),
     target_w: float = 0,
     target_h: float = 0,

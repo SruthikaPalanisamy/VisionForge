@@ -1,0 +1,28 @@
+{
+    "id": "INS-4650",
+    "timestamp": "05:37:28 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 37.5,
+            "expected": 0,
+            "error": 3750
+        },
+        "plate_h": {
+            "measured": 42.5,
+            "expected": 0,
+            "error": 4250
+        },
+        "hole_count": {
+            "measured": 0,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 13.1,
+        "errors": [
+            "Width error: +37.5mm",
+            "Height error: +42.5mm",
+            "Hole Count error: 0 / 4"
+        ]
+    },
+    "results": []
+}

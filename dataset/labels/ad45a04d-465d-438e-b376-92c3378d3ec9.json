@@ -1,0 +1,28 @@
+{
+    "id": "INS-4302",
+    "timestamp": "04:37:19 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 27,
+            "expected": 0,
+            "error": 2700
+        },
+        "plate_h": {
+            "measured": 26.5,
+            "expected": 0,
+            "error": 2650
+        },
+        "hole_count": {
+            "measured": 3,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 26.13,
+        "errors": [
+            "Width error: +27.0mm",
+            "Height error: +26.5mm",
+            "Hole Count error: 3 / 4"
+        ]
+    },
+    "results": []
+}

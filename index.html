@@ -158,16 +158,16 @@
             <div class="px-6 space-y-4">
                 <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Target Specs (mm)</h3>
                 <div class="grid grid-cols-1 gap-2">
-                    <input type="number" id="targetW" placeholder="Target Width"
+                    <input type="number" id="target-width" placeholder="Target Width"
                         class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                         value="100">
-                    <input type="number" id="targetH" placeholder="Target Height"
+                    <input type="number" id="target-height" placeholder="Target Height"
                         class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                         value="100">
-                    <input type="number" id="targetHD" placeholder="Hole Diameter"
+                    <input type="number" id="target-hole-diameter" placeholder="Hole Diameter"
                         class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                         value="10">
-                    <input type="number" id="targetHC" placeholder="Target Holes"
+                    <input type="number" id="target-holes" placeholder="Target Holes"
                         class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                         value="4">
                 </div>
@@ -543,6 +543,15 @@
             cameraModal.classList.add('hidden');
         });
 
+        function getValidatedTargets() {
+            return {
+                width: document.getElementById('target-width').value || 100,
+                height: document.getElementById('target-height').value || 100,
+                holeD: document.getElementById('target-hole-diameter').value || 10,
+                holes: document.getElementById('target-holes').value || 4
+            };
+        }
+
         captureBtn.addEventListener('click', async () => {
             const canvas = document.getElementById('captureCanvas');
             canvas.width = video.videoWidth;
@@ -552,11 +561,13 @@
 
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
             const formData = new FormData();
+            const targets = getValidatedTargets();
+
             formData.append('file', blob, 'snapshot.jpg');
-            formData.append('target_w', document.getElementById('targetW').value);
-            formData.append('target_h', document.getElementById('targetH').value);
-            formData.append('target_hole_d', document.getElementById('targetHD').value);
-            formData.append('target_hole_count', document.getElementById('targetHC').value);
+            formData.append('target_w', targets.width);
+            formData.append('target_h', targets.height);
+            formData.append('target_hole_d', targets.holeD);
+            formData.append('target_hole_count', targets.holes);
 
             captureBtn.disabled = true;
             captureBtn.innerText = 'PROCESSING...';
@@ -571,11 +582,12 @@
         });
 
         document.getElementById('generateBtn').addEventListener('click', () => {
+            const targets = getValidatedTargets();
             const params = new URLSearchParams({
-                target_w: document.getElementById('targetW').value,
-                target_h: document.getElementById('targetH').value,
-                target_hole_d: document.getElementById('targetHD').value,
-                target_hole_count: document.getElementById('targetHC').value
+                target_w: targets.width,
+                target_h: targets.height,
+                target_hole_d: targets.holeD,
+                target_hole_count: targets.holes
             });
             runInspection(`/generate?${params.toString()}`);
         });
@@ -590,14 +602,24 @@
             if (e.target.files.length === 0) return;
 
             const file = e.target.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('target_w', document.getElementById('targetW').value);
-            formData.append('target_h', document.getElementById('targetH').value);
-            formData.append('target_hole_d', document.getElementById('targetHD').value);
-            formData.append('target_hole_count', document.getElementById('targetHC').value);
 
-            await runInspection('/upload', 'POST', formData);
+            // File Type Validation
+            if (!file.type.startsWith('image/')) {
+                alert('Invalid file type. Please upload an image.');
+                fileInput.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            const targets = getValidatedTargets();
+
+            formData.append('file', file);
+            formData.append('target_w', targets.width);
+            formData.append('target_h', targets.height);
+            formData.append('target_hole_d', targets.holeD);
+            formData.append('target_hole_count', targets.holes);
+
+            await runInspection('/process_upload', 'POST', formData);
             fileInput.value = ''; // Reset for next upload
         });
 

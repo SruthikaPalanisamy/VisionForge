@@ -143,6 +143,16 @@
                     </svg>
                     Live Scan
                 </button>
+                <input type="file" id="fileInput" class="hidden" accept="image/*">
+                <button id="uploadBtn"
+                    class="w-full bg-slate-800 hover:bg-slate-700 text-slate-100 font-black py-4 px-4 rounded shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95 text-xs uppercase tracking-tight">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload Scan
+                </button>
             </div>
 
             <div class="px-6 space-y-4">
@@ -157,6 +167,9 @@
                     <input type="number" id="targetHD" placeholder="Hole Diameter"
                         class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                         value="10">
+                    <input type="number" id="targetHC" placeholder="Target Holes"
+                        class="bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                        value="4">
                 </div>
             </div>
 
@@ -192,6 +205,15 @@
                             class="border-2 border-slate-700 text-slate-600 px-6 py-1 rounded font-black text-xl tracking-tighter transition-all">
                             IDLE
                         </div>
+                        <button id="saveDatasetBtn"
+                            class="mt-2 text-[9px] font-black uppercase tracking-widest bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 px-3 py-1.5 rounded transition-all hidden flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            Add to Dataset
+                        </button>
                     </div>
                 </div>
 
@@ -270,7 +292,7 @@
                         </div>
                         <div class="absolute bottom-4 right-6 flex items-baseline gap-2">
                             <span class="text-[8px] font-bold text-slate-600 uppercase">Target:</span>
-                            <span class="text-[10px] font-bold text-slate-300">4qty</span>
+                            <span id="tgtHoles" class="text-[10px] font-bold text-slate-300">4qty</span>
                         </div>
                     </div>
 
@@ -384,6 +406,19 @@
         </main>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-10 right-10 z-[200] transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div
+            class="bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded shadow-2xl flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+            <span id="toastMessage">Saved to Dataset</span>
+        </div>
+    </div>
+
     <!-- Live Camera Modal -->
     <div id="cameraModal"
         class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[100] hidden flex items-center justify-center p-10">
@@ -439,6 +474,7 @@
         let varianceChart;
         const history = [];
         let stream = null;
+        let lastInspectionData = null;
 
         // Camera Toggle
         const liveScanBtn = document.getElementById('liveScanBtn');
@@ -446,6 +482,51 @@
         const closeCameraBtn = document.getElementById('closeCameraBtn');
         const video = document.getElementById('videoStream');
         const captureBtn = document.getElementById('captureBtn');
+        const saveDatasetBtn = document.getElementById('saveDatasetBtn');
+
+        saveDatasetBtn.addEventListener('click', async () => {
+            if (!lastInspectionData) return;
+
+            saveDatasetBtn.disabled = true;
+            saveDatasetBtn.innerText = 'SAVING...';
+
+            try {
+                const response = await fetch('/save_to_dataset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: lastInspectionData.original,
+                        metadata: {
+                            id: lastInspectionData.id,
+                            timestamp: lastInspectionData.timestamp,
+                            summary: lastInspectionData.summary,
+                            results: lastInspectionData.results
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast('Successfully Saved to Dataset');
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (err) {
+                alert('Failed to save: ' + err.message);
+            } finally {
+                saveDatasetBtn.disabled = false;
+                saveDatasetBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg> Add to Dataset`;
+            }
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
 
         liveScanBtn.addEventListener('click', async () => {
             try {
@@ -475,6 +556,7 @@
             formData.append('target_w', document.getElementById('targetW').value);
             formData.append('target_h', document.getElementById('targetH').value);
             formData.append('target_hole_d', document.getElementById('targetHD').value);
+            formData.append('target_hole_count', document.getElementById('targetHC').value);
 
             captureBtn.disabled = true;
             captureBtn.innerText = 'PROCESSING...';
@@ -488,7 +570,36 @@
             cameraModal.classList.add('hidden');
         });
 
-        document.getElementById('generateBtn').addEventListener('click', () => runInspection('/generate'));
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            const params = new URLSearchParams({
+                target_w: document.getElementById('targetW').value,
+                target_h: document.getElementById('targetH').value,
+                target_hole_d: document.getElementById('targetHD').value,
+                target_hole_count: document.getElementById('targetHC').value
+            });
+            runInspection(`/generate?${params.toString()}`);
+        });
+
+        // Upload Logic
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', async (e) => {
+            if (e.target.files.length === 0) return;
+
+            const file = e.target.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('target_w', document.getElementById('targetW').value);
+            formData.append('target_h', document.getElementById('targetH').value);
+            formData.append('target_hole_d', document.getElementById('targetHD').value);
+            formData.append('target_hole_count', document.getElementById('targetHC').value);
+
+            await runInspection('/upload', 'POST', formData);
+            fileInput.value = ''; // Reset for next upload
+        });
 
         async function runInspection(url, method = 'POST', body = null) {
             try {
@@ -498,6 +609,8 @@
 
                 updateDashboard(data);
                 addToHistoryList(data);
+                lastInspectionData = data;
+                saveDatasetBtn.classList.remove('hidden');
             } catch (err) {
                 console.error(err);
                 alert('Connection Error');
@@ -520,9 +633,13 @@
             updateMetricBox('Width', data.summary.plate_w);
             updateMetricBox('Height', data.summary.plate_h);
 
+            // Holes
             const vHoles = document.getElementById('valHoles');
+            const tHoles = document.getElementById('tgtHoles'); // Assuming this element exists in the HTML for target holes
             vHoles.innerText = data.summary.hole_count.measured;
-            const hFail = data.summary.hole_count.measured !== 4;
+            tHoles.innerText = data.summary.hole_count.expected + 'qty';
+
+            const hFail = data.summary.hole_count.measured !== data.summary.hole_count.expected;
             vHoles.className = `text-4xl font-black mono ${hFail ? 'text-rose-500' : 'text-white'}`;
             document.getElementById('cardHoles').className = `bg-card p-6 rounded border border-white/5 shadow-2xl flex flex-col justify-between h-32 relative group overflow-hidden ${hFail ? 'metric-indicator-fail' : 'metric-indicator-pass'}`;
             document.getElementById('warnHoles').classList.toggle('hidden', !hFail);

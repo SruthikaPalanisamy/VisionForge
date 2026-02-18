@@ -1,0 +1,41 @@
+{
+    "id": "LVE-8233",
+    "timestamp": "04:04:35 PM",
+    "summary": {
+        "plate_w": {
+            "measured": 28.5,
+            "expected": 0,
+            "error": 2850
+        },
+        "plate_h": {
+            "measured": 25.5,
+            "expected": 0,
+            "error": 2550
+        },
+        "hole_count": {
+            "measured": 15,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 35.16,
+        "errors": [
+            "Width error: +28.5mm",
+            "Height error: +25.5mm",
+            "Hole Count error: 15 / 4"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "28.5 mm",
+            "expected": "0.0 mm",
+            "status": "FAIL"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "25.5 mm",
+            "expected": "0.0 mm",
+            "status": "FAIL"
+        }
+    ]
+}

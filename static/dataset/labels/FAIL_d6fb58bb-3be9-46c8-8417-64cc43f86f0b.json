@@ -1,0 +1,41 @@
+{
+    "id": "INS-2982",
+    "timestamp": "01:28:51 AM",
+    "summary": {
+        "plate_w": {
+            "measured": 438.5,
+            "expected": 0,
+            "error": 43850
+        },
+        "plate_h": {
+            "measured": 498.5,
+            "expected": 0,
+            "error": 49850
+        },
+        "hole_count": {
+            "measured": 1,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 111.97,
+        "errors": [
+            "Width error: +438.5mm",
+            "Height error: +498.5mm",
+            "Blob Count error: 1 / 4"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "438.5mm",
+            "expected": "0.0mm",
+            "error": "43850.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "498.5mm",
+            "expected": "0.0mm",
+            "error": "49850.0%"
+        }
+    ]
+}

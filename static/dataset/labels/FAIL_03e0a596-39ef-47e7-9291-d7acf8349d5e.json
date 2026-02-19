@@ -1,0 +1,39 @@
+{
+    "id": "INS-2898",
+    "timestamp": "04:21:32 AM",
+    "summary": {
+        "plate_w": {
+            "measured": 438.5,
+            "expected": 0,
+            "error": 43850
+        },
+        "plate_h": {
+            "measured": 498.5,
+            "expected": 0,
+            "error": 49850
+        },
+        "hole_count": {
+            "measured": 0,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 151.71,
+        "errors": [
+            "Hole Count error: 0 / 4"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "438.5mm",
+            "expected": "0.0mm",
+            "error": "43850.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "498.5mm",
+            "expected": "0.0mm",
+            "error": "49850.0%"
+        }
+    ]
+}

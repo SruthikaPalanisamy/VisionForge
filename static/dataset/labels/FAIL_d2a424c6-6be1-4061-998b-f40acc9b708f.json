@@ -1,0 +1,39 @@
+{
+    "id": "LVE-9565",
+    "timestamp": "04:12:04 AM",
+    "summary": {
+        "plate_w": {
+            "measured": 160.5,
+            "expected": 0,
+            "error": 16050
+        },
+        "plate_h": {
+            "measured": 99.5,
+            "expected": 0,
+            "error": 9950
+        },
+        "hole_count": {
+            "measured": 0,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 338.23,
+        "errors": [
+            "Hole Count error: 0 / 4"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "160.5mm",
+            "expected": "0.0mm",
+            "error": "16050.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "99.5mm",
+            "expected": "0.0mm",
+            "error": "9950.0%"
+        }
+    ]
+}

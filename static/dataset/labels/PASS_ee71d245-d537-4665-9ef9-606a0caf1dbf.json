@@ -1,0 +1,45 @@
+{
+    "id": "INS-7251",
+    "timestamp": "08:30:24 AM",
+    "summary": {
+        "plate_w": {
+            "measured": 55.5,
+            "expected": 54,
+            "error": 2.78
+        },
+        "plate_h": {
+            "measured": 55,
+            "expected": 54,
+            "error": 1.85
+        },
+        "hole_count": {
+            "measured": 1,
+            "expected": 1
+        },
+        "status": "PASS",
+        "latency": 15.49,
+        "errors": [],
+        "metrics": [
+            {
+                "id": 1,
+                "diameter": 20.6,
+                "x": 250,
+                "y": 249
+            }
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "55.5mm",
+            "expected": "54.0mm",
+            "error": "2.78%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "55.0mm",
+            "expected": "54.0mm",
+            "error": "1.85%"
+        }
+    ]
+}

@@ -1,0 +1,77 @@
+{
+    "id": "LVE-4335",
+    "timestamp": "08:53:20 AM",
+    "summary": {
+        "plate_w": {
+            "measured": 27,
+            "expected": 0,
+            "error": 2700
+        },
+        "plate_h": {
+            "measured": 24,
+            "expected": 0,
+            "error": 2400
+        },
+        "hole_count": {
+            "measured": 6,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 274.84,
+        "errors": [
+            "Hole Count error: 6 / 4"
+        ],
+        "metrics": [
+            {
+                "id": 1,
+                "diameter": 20.6,
+                "x": 158,
+                "y": 652
+            },
+            {
+                "id": 2,
+                "diameter": 20.6,
+                "x": 900,
+                "y": 500
+            },
+            {
+                "id": 3,
+                "diameter": 20.6,
+                "x": 643,
+                "y": 468
+            },
+            {
+                "id": 4,
+                "diameter": 20.6,
+                "x": 373,
+                "y": 433
+            },
+            {
+                "id": 5,
+                "diameter": 20.6,
+                "x": 789,
+                "y": 374
+            },
+            {
+                "id": 6,
+                "diameter": 20.6,
+                "x": 500,
+                "y": 341
+            }
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "27.0mm",
+            "expected": "0.0mm",
+            "error": "2700.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "24.0mm",
+            "expected": "0.0mm",
+            "error": "2400.0%"
+        }
+    ]
+}

@@ -319,7 +319,7 @@
                 </div>
 
                 <!-- Analysis Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
                     <!-- Visual Inspection -->
                     <div class="space-y-4 flex flex-col">
                         <h3
@@ -374,38 +374,84 @@
                         </div>
                     </div>
 
-                    <!-- Dimensional Analysis -->
-                    <div class="space-y-4 flex flex-col">
-                        <h3
-                            class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            Dimensional Analysis
-                        </h3>
-                        <div class="flex-1 bg-card rounded border border-white/5 flex flex-col overflow-hidden">
-                            <div class="bg-white/5 flex p-2 gap-2">
-                                <button
-                                    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-900 rounded text-slate-100 border border-white/5">Dimensions</button>
-                                <button
-                                    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors">Hole
-                                    Positions</button>
-                            </div>
-                            <div class="flex-1 p-8 relative min-h-[300px] flex flex-col justify-end">
-                                <div id="chartContainer" class="flex-1 relative mb-6">
-                                    <canvas id="varianceChart"></canvas>
+                    <!-- Analysis & Metrics Column -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <!-- Tabbed Analysis Card -->
+                        <div class="space-y-4 flex flex-col">
+                            <h3
+                                class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                Inspection Analysis
+                            </h3>
+                            <div
+                                class="flex-1 bg-card rounded border border-white/5 flex flex-col overflow-hidden min-h-[450px]">
+                                <div class="bg-white/5 flex p-2 gap-2">
+                                    <button id="tabDimensions"
+                                        class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-900 rounded text-slate-100 border border-white/5 transition-all">Dimensional
+                                        Analysis</button>
+                                    <button id="tabPositions"
+                                        class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors">Hole
+                                        Positions</button>
                                 </div>
-                                <div class="flex justify-between border-t border-white/5 pt-4">
-                                    <div class="flex flex-col">
-                                        <span class="text-[9px] font-bold text-slate-600 uppercase">Target Line</span>
-                                        <span class="text-[10px] font-black text-slate-400">100.00% SYNC</span>
+
+                                <!-- Content: Dimensions (Chart) -->
+                                <div id="viewDimensions" class="flex-1 p-8 flex flex-col justify-end">
+                                    <div id="chartContainer" class="flex-1 relative mb-6">
+                                        <canvas id="varianceChart"></canvas>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="text-[9px] font-bold text-slate-600 uppercase">Analysis
-                                            Engine</span>
-                                        <span class="text-[10px] font-black text-blue-500">OPTIMIZED</span>
+                                    <div class="flex justify-between border-t border-white/5 pt-4">
+                                        <div class="flex flex-col">
+                                            <span class="text-[9px] font-bold text-slate-600 uppercase">Target
+                                                Line</span>
+                                            <span class="text-[10px] font-black text-slate-400">100.00% SYNC</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-[9px] font-bold text-slate-600 uppercase">Analysis
+                                                Engine</span>
+                                            <span class="text-[10px] font-black text-blue-500">OPTIMIZED</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Content: Positions (List) -->
+                                <div id="viewPositions" class="hidden flex-1 p-6 overflow-y-auto custom-scrollbar">
+                                    <div id="positionsList" class="space-y-3">
+                                        <div
+                                            class="py-20 text-center text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                                            Awaiting Inspection Data
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FEATURE METRICS (Now below Analysis) -->
+                        <div class="space-y-4 flex flex-col">
+                            <h3
+                                class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                Feature Metrics
+                            </h3>
+                            <div class="bg-card rounded border border-white/5 flex flex-col overflow-hidden">
+                                <div class="bg-white/5 p-3 flex justify-between items-center border-b border-white/5">
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-300">CNC
+                                        Specification Bind</span>
+                                    <span class="text-[9px] font-bold text-slate-500 uppercase">Status: <span
+                                            class="text-emerald-500">LOCKED (20.6mm)</span></span>
+                                </div>
+                                <div id="metricsList"
+                                    class="p-4 flex flex-col gap-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                    <div
+                                        class="py-10 text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                        Awaiting Inspection
                                     </div>
                                 </div>
                             </div>
@@ -673,6 +719,26 @@
             cameraModal.classList.add('hidden');
         });
 
+        // Tab Logic
+        const tabDimensions = document.getElementById('tabDimensions');
+        const tabPositions = document.getElementById('tabPositions');
+        const viewDimensions = document.getElementById('viewDimensions');
+        const viewPositions = document.getElementById('viewPositions');
+
+        tabDimensions.addEventListener('click', () => {
+            tabDimensions.className = 'flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-900 rounded text-slate-100 border border-white/5 transition-all';
+            tabPositions.className = 'flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors';
+            viewDimensions.classList.remove('hidden');
+            viewPositions.classList.add('hidden');
+        });
+
+        tabPositions.addEventListener('click', () => {
+            tabPositions.className = 'flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-900 rounded text-slate-100 border border-white/5 transition-all';
+            tabDimensions.className = 'flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors';
+            viewPositions.classList.remove('hidden');
+            viewDimensions.classList.add('hidden');
+        });
+
         document.getElementById('generateBtn').addEventListener('click', () => {
             const targets = getValidatedTargets();
             const params = new URLSearchParams({
@@ -759,6 +825,53 @@
             document.getElementById('warnHoles').classList.toggle('hidden', !hFail);
 
             document.getElementById('valLatency').innerText = data.summary.latency;
+
+            // Populate Metrics List (Hardcoded to 20.6mm per Specs)
+            const metricsList = document.getElementById('metricsList');
+            if (data.summary.metrics && data.summary.metrics.length > 0) {
+                metricsList.innerHTML = data.summary.metrics.map(m => `
+                    <div class="flex justify-between items-center bg-slate-900/40 p-4 border border-white/5 rounded-lg shadow-inner">
+                        <div class="flex flex-col">
+                            <span class="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Feature Unit</span>
+                            <span class="text-[10px] font-black text-slate-300 mono uppercase">HOLE #${m.id}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[8px] font-bold text-slate-600 uppercase tracking-widest">CNC Spec</span>
+                            <span class="block text-xl font-black text-rose-500 mono leading-none tracking-tighter">20.6<span class="text-[10px] ml-0.5 text-slate-500">mm</span></span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                metricsList.innerHTML = '<div class="py-10 text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">No Features Identified</div>';
+            }
+
+            // Populate Positions List (Tab Content)
+            const positionsList = document.getElementById('positionsList');
+            if (data.summary.metrics && data.summary.metrics.length > 0) {
+                positionsList.innerHTML = data.summary.metrics.map(m => `
+                    <div class="flex justify-between items-center bg-white/5 p-4 rounded border border-white/5 group hover:border-blue-500/50 transition-all">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hole ID: ${m.id}</span>
+                            <div class="flex gap-4">
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-[8px] font-bold text-slate-600 uppercase">X:</span>
+                                    <span class="text-sm font-black text-blue-400 mono">${m.x}</span>
+                                </div>
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-[8px] font-bold text-slate-600 uppercase">Y:</span>
+                                    <span class="text-sm font-black text-emerald-400 mono">${m.y}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                positionsList.innerHTML = '<div class="py-20 text-center text-[10px] text-slate-600 font-bold uppercase tracking-widest">No Position Data Available</div>';
+            }
+
             renderChart(data.results.map(r => r.feature.replace('Plate ', '')), data.results.map(r => parseFloat(r.error)));
         }
 

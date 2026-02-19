@@ -1,0 +1,41 @@
+{
+    "id": "INS-4107",
+    "timestamp": "01:32:27 AM",
+    "summary": {
+        "plate_w": {
+            "measured": 28,
+            "expected": 0,
+            "error": 2800
+        },
+        "plate_h": {
+            "measured": 23,
+            "expected": 0,
+            "error": 2300
+        },
+        "hole_count": {
+            "measured": 2,
+            "expected": 4
+        },
+        "status": "FAIL",
+        "latency": 149.74,
+        "errors": [
+            "Width error: +28.0mm",
+            "Height error: +23.0mm",
+            "Blob Count error: 2 / 4"
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "28.0mm",
+            "expected": "0.0mm",
+            "error": "2800.0%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "23.0mm",
+            "expected": "0.0mm",
+            "error": "2300.0%"
+        }
+    ]
+}

@@ -1,0 +1,45 @@
+{
+    "id": "INS-3662",
+    "timestamp": "08:29:20 AM",
+    "summary": {
+        "plate_w": {
+            "measured": 55.5,
+            "expected": 54,
+            "error": 2.78
+        },
+        "plate_h": {
+            "measured": 56.5,
+            "expected": 54,
+            "error": 4.63
+        },
+        "hole_count": {
+            "measured": 1,
+            "expected": 1
+        },
+        "status": "PASS",
+        "latency": 14.12,
+        "errors": [],
+        "metrics": [
+            {
+                "id": 1,
+                "diameter": 20.6,
+                "x": 250,
+                "y": 249
+            }
+        ]
+    },
+    "results": [
+        {
+            "feature": "Plate Width",
+            "measured": "55.5mm",
+            "expected": "54.0mm",
+            "error": "2.78%"
+        },
+        {
+            "feature": "Plate Height",
+            "measured": "56.5mm",
+            "expected": "54.0mm",
+            "error": "4.63%"
+        }
+    ]
+}

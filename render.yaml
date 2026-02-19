@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: visionforge-cnc
+    env: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
